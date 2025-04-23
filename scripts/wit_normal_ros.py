@@ -43,7 +43,7 @@ def hex_to_altitude(raw_data):
     return list(struct.unpack("h", bytearray(raw_data)))
     
 # 处理串口数据
-def handleSerialData(raw_data):
+def handleSerialData(raw_data, frame):
     global buff, key, angle_degree, magnetometer, acceleration, angularVelocity, pub_flag, readreg, calibuff, flag, mag_offset, mag_range, version, longitude_imu, latitude_imu, altitude_imu
     angle_flag=False
     if python_version == '2':
@@ -130,13 +130,13 @@ def handleSerialData(raw_data):
             stamp = rospy.get_rostime()
 
             imu_msg.header.stamp = stamp
-            imu_msg.header.frame_id = "base_link"
+            imu_msg.header.frame_id = frame
 
             mag_msg.header.stamp = stamp
-            mag_msg.header.frame_id = "base_link"
+            mag_msg.header.frame_id = frame
 
             location_msg.header.stamp = stamp
-            location_msg.header.frame_id = "base_link"
+            location_msg.header.frame_id = frame
             
             angle_radian = [angle_degree[i] * math.pi / 180 for i in range(3)]
             qua = quaternion_from_euler(angle_radian[0], angle_radian[1], angle_radian[2])
@@ -366,6 +366,10 @@ if __name__ == "__main__":
     rospy.init_node("imu")
     port = rospy.get_param("~port", "/dev/ttyUSB0")
     baudrate = rospy.get_param("~baud", 9600)
+    frame_id = rospy.get_param("~frame_id", "base_link")
+    imu_topic = rospy.get_param("~imu_topic", "wit/imu")
+    mag_topic = rospy.get_param("~mag_topic", "wit/mag")
+    gps_topic = rospy.get_param("~gps_topic", "wit/location")
     # baudrate = 115200
     print("IMU Type: Normal Port:%s baud:%d" %(port,baudrate))
     imu_msg = Imu()
@@ -387,9 +391,9 @@ if __name__ == "__main__":
         exit(0)
     else:
         #AutoScanSensor()
-        imu_pub = rospy.Publisher("wit/imu", Imu, queue_size=10)
-        mag_pub = rospy.Publisher("wit/mag", MagneticField, queue_size=10)
-        location_pub = rospy.Publisher("wit/location",NavSatFix,queue_size=10)
+        imu_pub = rospy.Publisher(imu_topic, Imu, queue_size=10)
+        mag_pub = rospy.Publisher(mag_topic, MagneticField, queue_size=10)
+        location_pub = rospy.Publisher(gps_topic,NavSatFix,queue_size=10)
 
         while not rospy.is_shutdown():
             try:
@@ -399,7 +403,7 @@ if __name__ == "__main__":
                     if recordflag:
                         recordbuff = recordbuff + buff_data
                     for i in range(0, buff_count):
-                        handleSerialData(buff_data[i])
+                        handleSerialData(buff_data[i], frame_id)
             except Exception as e:
                 print("exception:" + str(e))
                 print("imu loss of connection, poor contact, or broken wire")

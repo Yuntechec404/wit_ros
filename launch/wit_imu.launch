@@ -28,6 +28,11 @@
     <node pkg="wit_ros_imu" type="wit_$(arg type)_ros.py" name="imu" output="screen">
         <param name="port"               type = "str"    value="/dev/ttyUSB0"/>
         <param name="baud"               type = "int"    value="9600"/>
+
+		<param name="frame_id"           type = "str"    value="base_link"/>
+		<param name="imu_topic"          type = "str"    value="wit/imu"/>
+		<param name="mag_topic"          type = "str"    value="wit/mag"/>
+		<param name="gps_topic"          type = "str"    value="wit/location"/>
     </node>
 
 	<!--
